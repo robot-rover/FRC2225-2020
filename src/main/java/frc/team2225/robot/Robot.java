@@ -9,9 +9,13 @@ package frc.team2225.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import edu.wpi.first.wpilibj.ADXL345_SPI;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.team2225.robot.subsystem.ArcadeDrive;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import frc.team2225.robot.ScaleInputs;
 
 
 /**
@@ -22,12 +26,19 @@ import frc.team2225.robot.subsystem.ArcadeDrive;
  * project.
  */
 public class Robot extends TimedRobot {
+    private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
     private TalonSRX fl = new TalonSRX(1);
     private TalonSRX bl = new TalonSRX(2);
     private TalonSRX fr = new TalonSRX(3);
     private TalonSRX br = new TalonSRX(4);
+    private TalonSRX RollerIntake = new TalonSRX(5);
     private XboxController controller1 = new XboxController(0);
     private ArcadeDrive drivetrain;
+    private boolean driveSwitch;
+    private boolean intakeSwitch;
+    double speed;
+    double turn;
+
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -52,16 +63,33 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopPeriodic() {
-        double speed = -controller1.getRawAxis(4) * 0.4;
-        double turn = controller1.getRawAxis(1) * 0.8;
 
-        double left = speed + turn;
-        double right = speed - turn;
-        fr.set(ControlMode.PercentOutput, right);
-        br.set(ControlMode.PercentOutput, right);
-        fl.set(ControlMode.PercentOutput, left);
-        bl.set(ControlMode.PercentOutput, left);
-    }
+        if (controller1.getXButtonPressed()){
+            driveSwitch ^=true;
+        }
+        if (controller1.getYButtonPressed()){
+            intakeSwitch ^=true;
+        }
+        if(intakeSwitch){
+            RollerIntake.set(ControlMode.PercentOutput, 1);
+        }
+        if(driveSwitch) {
+            speed = ScaleInputs.scaleInputs(-controller1.getRawAxis(4));
+            turn = ScaleInputs.scaleInputs(-controller1.getRawAxis(1));
+
+            double left = speed + turn;
+            double right = speed - turn;
+            fr.set(ControlMode.PercentOutput, right);
+            br.set(ControlMode.PercentOutput, right);
+            fl.set(ControlMode.PercentOutput, left);
+            bl.set(ControlMode.PercentOutput, left);
+            }
+        else
+        {
+            speed *=-1;
+            turn *=-1;
+        }
+        }
 
     @Override
     public void testInit() {
